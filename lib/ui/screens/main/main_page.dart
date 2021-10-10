@@ -5,6 +5,8 @@ import 'package:google_fonts/google_fonts.dart';
 enum DropdownOptions { dna, mRNA, tRNA }
 
 class MainPage extends StatefulWidget {
+  const MainPage({Key? key}) : super(key: key);
+
   @override
   _MainPageState createState() => _MainPageState();
 }
@@ -13,7 +15,7 @@ class _MainPageState extends State<MainPage> {
   final _dnaField = TextEditingController(text: "");
   final List<String> _stopCodes = ['UAA', 'UAG', 'UGA'];
   final _maxAttempts = 3;
-  DropdownOptions _selectedOption = DropdownOptions.dna;
+  // DropdownOptions _selectedOption = DropdownOptions.dna;
   String _displayMRNA = "";
   String _mRNA = "";
   String _codons = "";
@@ -28,41 +30,42 @@ class _MainPageState extends State<MainPage> {
   }
 
   _clearText() {
-    if (_dnaField.text != null && _dnaField.text.isNotEmpty) {
+    if (_dnaField.text.isNotEmpty) {
       setState(() {
         _dnaField.text = "";
       });
     }
   }
 
-  String _optionsToString(DropdownOptions option) {
-    switch (option) {
-      case DropdownOptions.dna:
-        return "DNA";
-        break;
-      case DropdownOptions.mRNA:
-        return "mRNA";
-        break;
-      case DropdownOptions.tRNA:
-        return "tRNA";
-        break;
-      default:
-        return null;
-    }
+  // String _optionsToString(DropdownOptions option) {
+  //   switch (option) {
+  //     case DropdownOptions.dna:
+  //       return "DNA";
+  //     case DropdownOptions.mRNA:
+  //       return "mRNA";
+  //     case DropdownOptions.tRNA:
+  //       return "tRNA";
+  //   }
+  // }
+
+  void _calculateResult() {
+    if (_dnaField.text.isEmpty) return;
+    _calculateMRNA();
+    _getCodons();
+    _calculateAntiCodons();
+    setState(() {});
+    // switch (_selectedOption) {
+    //   case DropdownOptions.dna:
+    //     _calculateMRNA();
+    //     _getCodons();
+    //     _calculateAntiCodons();
+    //     setState(() {});
+    //     break;
+    //   default:
+    // }
   }
 
-  void _calculateResult() async {
-    switch (_selectedOption) {
-      case DropdownOptions.dna:
-        await _calculateMRNA();
-        await _getCodons();
-        await _calculateAntiCodons();
-        break;
-      default:
-    }
-  }
-
-  Future<void> _calculateMRNA() {
+  void _calculateMRNA() {
     String dna = _dnaField.text.toUpperCase();
     String mRNA = "";
     for (int i = 0; i < dna.length; i++) {
@@ -83,11 +86,8 @@ class _MainPageState extends State<MainPage> {
     for (Match match in matches) {
       spacedMRNA += "${match.group(0)} ";
     }
-    setState(() {
-      _displayMRNA = spacedMRNA;
-      _mRNA = mRNA;
-    });
-    return Future.value();
+    _displayMRNA = spacedMRNA;
+    _mRNA = mRNA;
   }
 
   bool _startsWithMethionine(String value) {
@@ -102,7 +102,7 @@ class _MainPageState extends State<MainPage> {
     return false;
   }
 
-  Future<void> _getCodons() {
+  void _getCodons() {
     print(_mRNA);
     String editedRNA = _mRNA;
     if (_hasStartCode) {
@@ -134,13 +134,10 @@ class _MainPageState extends State<MainPage> {
     if (codons.endsWith("-")) {
       codons = codons.substring(0, codons.length - 1);
     }
-    setState(() {
-      _codons = codons;
-    });
-    return Future.value();
+    _codons = codons;
   }
 
-  Future<void> _calculateAntiCodons() {
+  void _calculateAntiCodons() {
     String antiCodons = "";
     for (int i = 0; i < _codons.length; i++) {
       String character = _codons[i];
@@ -160,7 +157,6 @@ class _MainPageState extends State<MainPage> {
         case "-":
           antiCodons += "-";
           break;
-        default:
       }
       // if (character == "G") {
       //   antiCodons += "C";
@@ -174,78 +170,75 @@ class _MainPageState extends State<MainPage> {
       //   antiCodons += "-";
       // }
     }
-    setState(() {
-      _antiCodons = antiCodons;
-    });
-    return Future.value();
+    _antiCodons = antiCodons;
   }
 
   @override
   Widget build(BuildContext context) {
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ));
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        systemOverlayStyle: const SystemUiOverlayStyle(
+          statusBarColor: Colors.white,
+          statusBarIconBrightness: Brightness.dark,
+          systemNavigationBarColor: Colors.white,
+          systemNavigationBarIconBrightness: Brightness.dark,
+        ),
         elevation: 0,
         title: Text(
           "DNA Converter",
           style: GoogleFonts.openSans(
             fontWeight: FontWeight.bold,
-            textStyle: TextStyle(color: Colors.black),
+            textStyle: const TextStyle(color: Colors.black),
           ),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
-        brightness: Brightness.light,
       ),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 8),
         children: <Widget>[
           TextFormField(
             controller: _dnaField,
+            autocorrect: false,
             decoration: InputDecoration(
               labelText: "Sequence",
-              border: OutlineInputBorder(),
+              border: const OutlineInputBorder(),
               suffixIcon: IconButton(
-                icon: Icon(Icons.clear),
+                icon: const Icon(Icons.clear),
                 onPressed: () => _clearText(),
-                alignment: Alignment(0.0, 0.0),
+                alignment: const Alignment(0.0, 0.0),
               ),
             ),
+            textCapitalization: TextCapitalization.characters,
+            enableSuggestions: false,
+            inputFormatters: [UpperCaseTextFormatter()],
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (value) => _calculateResult(),
           ),
-          SizedBox(height: 10),
-          Text(
-            "What are you converting from?",
-            style: GoogleFonts.muli(
-              fontWeight: FontWeight.bold,
-              fontSize: 16.0,
-            ),
-          ),
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              DropdownButton<DropdownOptions>(
-                items: DropdownOptions.values.map((DropdownOptions value) {
-                  return DropdownMenuItem<DropdownOptions>(
-                    value: value,
-                    child: Text(_optionsToString(value)),
-                  );
-                }).toList(),
-                value: _selectedOption,
-                onChanged: (value) {
-                  setState(() {
-                    _selectedOption = value;
-                  });
-                },
-              ),
-            ],
-          ),
+          const SizedBox(height: 10),
+          // Text(
+          //   "What are you converting from?",
+          //   style: GoogleFonts.openSans(
+          //     fontWeight: FontWeight.bold,
+          //     fontSize: 16.0,
+          //   ),
+          // ),
+          // DropdownButton<DropdownOptions>(
+          //   items: DropdownOptions.values.map((DropdownOptions value) {
+          //     return DropdownMenuItem<DropdownOptions>(
+          //       value: value,
+          //       child: Text(_optionsToString(value)),
+          //     );
+          //   }).toList(),
+          //   value: _selectedOption,
+          //   onChanged: (value) {
+          //     if (value == null) return;
+          //     setState(() {
+          //       _selectedOption = value;
+          //     });
+          //   },
+          // ),
           SwitchListTile(
             title: const Text("Has start code"),
             subtitle: const Text("Can it start with 'AUG'?"),
@@ -266,15 +259,15 @@ class _MainPageState extends State<MainPage> {
               });
             },
           ),
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           Text(
             "Result",
-            style: GoogleFonts.muli(
+            style: GoogleFonts.openSans(
               fontWeight: FontWeight.bold,
               fontSize: 24.0,
             ),
           ),
-          SizedBox(height: 50),
+          const SizedBox(height: 50),
           Text(
             "mRNA:",
             style:
@@ -284,7 +277,7 @@ class _MainPageState extends State<MainPage> {
             _displayMRNA,
             style: GoogleFonts.notoSans(fontSize: 16),
           ),
-          SizedBox(height: 25),
+          const SizedBox(height: 25),
           Text(
             "Codons:",
             style: GoogleFonts.openSans(
@@ -298,7 +291,7 @@ class _MainPageState extends State<MainPage> {
               fontSize: 16,
             ),
           ),
-          SizedBox(height: 25),
+          const SizedBox(height: 25),
           Text(
             "Anticodon:",
             style:
@@ -310,6 +303,19 @@ class _MainPageState extends State<MainPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class UpperCaseTextFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    return TextEditingValue(
+      text: newValue.text.toUpperCase(),
+      selection: newValue.selection,
     );
   }
 }
